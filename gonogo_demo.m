@@ -37,10 +37,22 @@ end
 %----------------------------------
 
 % Make the folder where the data will be saved
-obsFidB = [cd filesep 'Data' filesep 'Observer ' num2str(obsNum) ' ' char(datetime('now', 'Format', 'yyyy-MM-dd HH_mm_ss'))];
-if exist(obsFidB, 'dir') < 1
-    mkdir(obsFidB);
-end
+% obsFidB = [cd filesep 'Data' filesep 'Observer ' num2str(obsNum) ' ' char(datetime('now', 'Format', 'yyyy-MM-dd HH_mm_ss'))];
+% if exist(obsFidB, 'dir') < 1
+%     mkdir(obsFidB);
+% end
+
+workf = fileparts(which(mfilename('fullpath'))); % working folder, i.e. the one containing this mfile
+resf = fullfile( workf, 'Results' ); % results folder
+if ~isfolder( resf ), mkdir( resf ); end
+
+sbj_resf = uigetdir( resf, 'Choose or create new Subject folder:' );
+[~,SID] = fileparts( sbj_resf ); % subject ID
+
+dtag = char(datetime('now','Format','yyMMdd')); % date tag
+sbj_date_resf = fullfile( sbj_resf, [ SID '_' dtag ] ); % subject date result folder
+if ~isfolder(sbj_date_resf), mkdir(sbj_date_resf); end
+
 
 
 %--------------------
@@ -73,7 +85,8 @@ colours = struct('black', [0, 0, 0], 'white', [255, 255, 255], ...
 
 if debugMode == 1
     % Open the screen
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [0 0 800 450], [], [], [], [], [], kPsychGUIWindow);
+    % [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [0 0 800 450], [], [], [], [], [], kPsychGUIWindow);
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [100 100 900 550], [], [], [], [], [], kPsychGUIWindow);
 
 else
     % Open the screen
@@ -129,10 +142,8 @@ lineWidthPix = 4;
 % [top-left-x top-left-y bottom-right-x bottom-right-y].
 baseRect = [0 0 200 200];
 
-% Center the rectangle on the centre of the screen using fractional pixel
-% values.
-% For help see: CenterRectOnPointd
-centeredRect = CenterRectOnPointd(baseRect, xCenter, yCenter);
+% Center the rectangle on the centre of the screen
+centeredRect = CenterRect(baseRect, windowRect);
 
 
 %----------------------------------------------------------------------
@@ -198,6 +209,8 @@ dataMat = nan(numTrials, 4);
 %                       Experimental loop
 %----------------------------------------------------------------------
 
+isQuitEarly = false;
+
 % loop for the total number of trials
 for trial = 1:numTrials
 
@@ -228,7 +241,7 @@ for trial = 1:numTrials
         KbStrokeWait(-1);
 
         % Draw the instructions
-        DrawFormattedText(window, 'You will either see a blue \n\n or a red square.\n\n\n If you see the blue, press the spacebar as quickly as possible.\n\n If you see the red, do nothing!\n\n\n Press any key to continue', 'center', 'center', black);
+        DrawFormattedText(window, 'You will either see a blue \n or a red square.\n\n If you see the blue, press\n the spacebar as quickly as possible.\n\n If you see the red, do nothing!\n\n Press any key to continue', 'center', 'center', black);
 
         % Flip to the screen
         Screen('Flip', window);
@@ -280,9 +293,11 @@ for trial = 1:numTrials
         [keyIsDown,secs, keyCode] = KbCheck(-1);
 
         if keyCode(escapeKey)
-            ShowCursor;
-            sca;
-            return
+            % ShowCursor;
+            % sca;
+            % return
+			isQuitEarly = true;
+			break
         elseif keyCode(spaceKey)
             % Update data variables if space pressed
             response = 1;
@@ -290,7 +305,9 @@ for trial = 1:numTrials
             rt = endResp - startResp;
             break
         end
-    end
+	end
+
+	if isQuitEarly, break; end
 
     % Clear the screen ready for a response
     Screen('FillRect', window, grey);
@@ -332,11 +349,14 @@ for trial = 1:numTrials
 
 end
 
-% Generate the specific file name according to the observer and session time
-dataFid = ['OBS' num2str(obsNum) '_goNoGoData.txt'];
+% % Generate the specific file name according to the observer and session time
+% dataFid = ['OBS' num2str(obsNum) '_goNoGoData.txt'];
+% 
+% % Save out the data. We save to the "obsFidB" directory as the code as a tab delimited text file
+% writematrix(dataMat, [obsFidB filesep dataFid], 'Delimiter', '\t')
 
-% Save out the data. We save to the "obsFidB" directory as the code as a tab delimited text file
-writematrix(dataMat, [obsFidB filesep dataFid], 'Delimiter', '\t')
+sid_dttag = [ SID '_' char(datetime('now','Format','yyMMdd_HHmm')) ];
+save( fullfile( sbj_date_resf, [ sid_dttag '.mat' ] ), 'sid_dttag', 'dataMat' );
 
 % Saved!
 disp('Data Saved')
