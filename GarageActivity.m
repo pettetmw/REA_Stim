@@ -2,6 +2,31 @@ function GarageActivity
 
 % Based on TouchFeedback5.m: see comments therin.
 
+% rough outline
+% for n_trials
+%	 isHit = true(3,1);
+%	 prompt?
+%	 garage closed image onset
+%	 for iTime < n_timeout
+%		targ = get_targ; % returns touched door number, or 0 if no touch
+%		if targ == 0
+%			if iTime == n_timeout - 1
+%				log 0 and 0
+%			end
+%			continue;
+%		end
+%		if isHit(targ)
+%			log targ and isHit(targ);
+%			isHit(targ) = false;
+%			show_car(targ);
+%		else
+%			show_empty(targ);
+%		end
+%		feedback(targ)?
+%	 end
+% end
+
+
 % (The following original comments are under revision.)
 % During practice trials, use feedback clips featuring a 3rd actress "C"
 % that follows same Pos/Neg and LeftRight specs as the tFeedbackMovFNms
@@ -401,78 +426,8 @@ AssertOpenGL;
 	end
 
 	function RunPractice
-
-		% timing variables for CheckTargets loop end
-		tBegT = GetSecs;
-		tTargT = tBegT + tPracTrlDelay;
-% 		tEndT = tTargT + tPracTrlDur; % moved into "switch tMode" below
-		tCurT = tBegT;
-		
-		while true % practice mode switching loop
-			if CharAvail, gCh = GetChar; end % test for state transition request
-			if gCh == 'q', break; end
-			if tMode ~= gCh
-				% initialize new mode
-				tMode = gCh;
-				
-				gIActress = mod( gIPractice - 1, 2 ) + 1;
-				if gIActress == 1
-					tTargs.p.MovFNm = fullfile( pwd, 'FeedbackStim4', 'Movies', tPracFeedbackMovFNms{1} );
-					tTargs.n.MovFNm = fullfile( pwd, 'FeedbackStim4', 'Movies', tPracFeedbackMovFNms{3} );
-				else
-					tTargs.p.MovFNm = fullfile( pwd, 'FeedbackStim4', 'Movies', tPracFeedbackMovFNms{2} );
-					tTargs.n.MovFNm = fullfile( pwd, 'FeedbackStim4', 'Movies', tPracFeedbackMovFNms{4} );
-				end
-
-				switch tMode
-					case 'g'
-						Screen('Flip', tW); Screen('Flip', tW); % double-flip clears both frame buffers to uniform background color
-						continue;
-					case { 'p', 'n', 'P', 'N' }
-						tIsBoth = false;
-						gTarg = tTargs.(lower(tMode));
-						SetMouse(tWd/2,tHt/2); % in absolute coordinates, so need to customize for second monitor
-						tEndT = tTargT + tPracTrlDur_PN;
-					case { 'b', 'B' }
-						tIsBoth = true;
-						SetMouse(tWd/2,tHt/2); % in absolute coordinates, so need to customize for second monitor
-						tEndT = tTargT + tPracTrlDur_B;
-				end
-				
-				PrepareTargetDataRec( 5 );
-				Screen('Flip', tW); % clear the back buffer
-				gActressPicFile = regexprep( tActressPics{ gIActress }, 'A|B', 'C' );
-				DrawIdle;
-
-				tIsTarg = false;
-				while true % CheckTargets loop
-					if CharAvail, gCh = GetChar; end % test for state transition request
-					if tMode ~= gCh
-						if tIsFeedBackPlaying, StopFeedbackMovie; end
-						break;
-					end
-					if ~tIsTarg && tCurT > tTargT
-						tIsTarg = true;
-						if tMode == 'b'
-							DrawBothTargets;
-						else
-							Screen('FillRect', tW, gTarg.Col, gTarg.Rct );
-							gTarg.DrawButton( gTarg.Rct, gTarg.Col/255 );
-						end
-						Screen('Flip', tW, 0, 1);
-					end
-					if tCurT > tEndT && ~tIsFeedBackPlaying, gCh = 'q'; break; end
-					CheckTargets;
-					tCurT = GetSecs;
-					if iXYB > gXYBN, EnlargeTargetDataRec; end
-				end % CheckTargets loop
-
-				tTbl = cat( 1, tTbl, { tMode [] [] gIPractice GetTargRecStats( 0.0 ) } ); % tHdr = { 'Mode' 'Seq' 'Stim' 'TrlNum' 'Resp' };
-				
-			end
-
-		end  % practice mode switching loop
-
+	% (Keeping as a placeholder function, but deleting contents to simplify
+	% development.)
 	end % function RunPractice
 
 	function RunExperiment
