@@ -154,7 +154,7 @@ centeredRect = CenterRect(baseRect, windowRect);
 % Screen('DrawTexture', w, imageTexture); % Draw the texture onto the window
 % Screen('Flip', w); % Display the drawn content on the screen
 
-d = dir( fullfile( workf, 'Stims', 'Cue*.png' ) );
+d = dir( fullfile( workf, 'Stims', 'gonogo', 'Cue*.png' ) );
 cue_ffs = fullfile( {d.folder}', {d.name}' );
 cue_txts = cellfun( @(f) Screen('MakeTexture', window, imread(f)), cue_ffs, 'uniformoutput', false );
 
