@@ -145,6 +145,19 @@ baseRect = [0 0 200 200];
 % Center the rectangle on the centre of the screen
 centeredRect = CenterRect(baseRect, windowRect);
 
+% % --- Load and prepare image ---
+% imagePath = 'your_image.png'; % Specify the path to your image file
+% imageData = imread(imagePath); % Read the image data
+% imageTexture = Screen('MakeTexture', w, imageData); % Create a Psychtoolbox texture from the image data
+% 
+% % --- Draw and display the image ---
+% Screen('DrawTexture', w, imageTexture); % Draw the texture onto the window
+% Screen('Flip', w); % Display the drawn content on the screen
+
+d = dir( fullfile( workf, 'Stims', 'Cue*.png' ) );
+cue_ffs = fullfile( {d.folder}', {d.name}' );
+cue_txts = cellfun( @(f) Screen('MakeTexture', window, imread(f)), cue_ffs, 'uniformoutput', false );
+
 
 %----------------------------------------------------------------------
 %                       Timings
@@ -283,7 +296,8 @@ for trial = 1:numTrials
     for i = 1:stimTimeFrames
 
         % Draw the square to the screen.
-        Screen('FillRect', window, rectColor, centeredRect);
+        % Screen('FillRect', window, rectColor, centeredRect);
+		Screen('DrawTexture', window, cue_txts{taskCon+1} );
 
         vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
 
