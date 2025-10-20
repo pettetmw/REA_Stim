@@ -2,29 +2,51 @@ function GarageActivity
 
 % Based on TouchFeedback5.m: see comments therin.
 
-% rough outline
-% for n_trials
-%	 isHit = true(3,1);
-%	 prompt?
+% rough outline:
+
+% tWR = getRect(tW); % needs tweak
+% targ_mask = zeros(size(tWR)); % non target areas are zero
+%
+% (statements to fill in target areas with 1, 2, or 3)
+%
+% for i_round = 1:n_rounds
+%	 idle screen?
 %	 garage closed image onset
-%	 for iTime < n_timeout
-%		targ = get_targ; % returns touched door number, or 0 if no touch
-%		if targ == 0
-%			if iTime == n_timeout - 1
-%				log 0 and 0
-%			end
-%			continue;
-%		end
-%		if isHit(targ)
-%			log targ and isHit(targ);
-%			isHit(targ) = false;
-%			show_car(targ);
+%	 start_time = GetSecs;
+%	 targ_tf = true(3,1); % whether each door is still a target
+%	 trial_count = 0;
+%	 isPrompt = true;  % this logic is still not correct
+%	 while any( targ_tf )
+%		if isPrompt, prompt: "Pick a door to make the car go!"; isPrompt = false; end
+%		targ_time = GetSecs;
+%		response_latency = (targ_time-start_time);
+%		if response_latency > 30.0
+%			start_time = GetSecs;
+%			isPrompt = true;
 %		else
-%			show_empty(targ);
+%			[tX,tY,tB] = GetMouse(tW);
+%			if tB == 0
+%				continue;
+%			end
+%			targ = targ_mask(tX,tY);
+%			isTarg = 0;
+%			if targ > 0, isTarg = targ_tf(targ); end
+%			% record i_round response_latency targ and isTarg;
+%			if targ_tf(targ)
+%				show_correct(targ);
+%				targ_tf(targ) = false;
+%				break;
+%			else
+%				show_incorrect(targ);
+%				break;
+%			end
+%			feedback(targ)?
 %		end
-%		feedback(targ)?
+%		trial_count = trial_count + 1;
 %	 end
 % end
+
+% additional timeout/restart logic?
 
 
 % (The following original comments are under revision.)
