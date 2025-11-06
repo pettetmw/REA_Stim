@@ -1,4 +1,4 @@
-
+% gonogo.m
 
 % downloaded as:
 % https://github.com/altunalia/go-nogo-task-demo/tree/main:gonogo_demo.m
@@ -29,6 +29,7 @@ numTrials = 10;
 % Set the percentage of trials in which "Go" stimuli will be presented out of the total number of trials. 
 % Example: 0.6 corresponds to 60% of the trials being Go stimuli.
 % The task is being more difficult when there are more Go than No-go trials
+
 taskRatio = 0.6; 
 
 % Check value is correct
@@ -298,7 +299,8 @@ for trial = 1:numTrials
     % Set data variables for this trial
     startResp = GetSecs;
     response = 0;
-    rt = NaN;                        
+    rt = NaN;
+
     % Present the stimuli
     for i = 1:stimTimeFrames
 
@@ -312,6 +314,7 @@ for trial = 1:numTrials
         % The space key signals a "Go" response labeled by 1. 
         % You can also press escape if you want to exit the program
         [keyIsDown,secs, keyCode] = KbCheck(-1);
+		[tX,tY,tB] = GetMouse(window);
 
         if keyCode(escapeKey)
             % ShowCursor;
@@ -319,8 +322,8 @@ for trial = 1:numTrials
             % return
 			isQuitEarly = true;
 			break
-        elseif keyCode(spaceKey)
-            % Update data variables if space pressed
+		elseif tB(1) % instead of: keyCode(spaceKey)
+            % Update data variables if mouse clicked (instead of space key)
             response = 1;
             endResp = GetSecs;
             rt = endResp - startResp;
