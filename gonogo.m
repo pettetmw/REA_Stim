@@ -17,7 +17,7 @@ sca;
 % Debug view toggle
 % Altering the screen size 
 % (0: experimental -> full screen | 1: debugging -> 800x450 application window)
-debugMode = 1;  
+debugMode = 0;  
 
 % Observer number
 obsNum = 1;
@@ -201,7 +201,7 @@ escapeKey = KbName('ESCAPE');
 spaceKey = KbName('space');
 
 % Hide the mouse cursor
-HideCursor;
+% HideCursor;
 
 %----------------------------------------------------------------------
 %                        Procedure / Trial Sequence
@@ -231,6 +231,7 @@ dataMat = nan(numTrials, 4);
 %----------------------------------------------------------------------
 
 isQuitEarly = false;
+ShowCursor;
 
 % loop for the total number of trials
 for trial = 1:numTrials
@@ -315,7 +316,8 @@ for trial = 1:numTrials
 		[tX,tY,tB] = GetMouse(window);
 		if tB(1)
             % Update data variables if mouse clicked (instead of space key)
-			disp([tX,tY,tB(1)]);  
+			disp([tX,tY,tB(1)]);
+			if ~IsInRect(tX,tY,centeredRect), continue; end
             response = 1;
             endResp = GetSecs;
             rt = endResp - startResp;
@@ -379,7 +381,7 @@ save( fullfile( sbj_date_resf, [ sid_dttag '.mat' ] ), 'sid_dttag', 'dataMat' );
 disp('Data Saved')
 
 % Show the mouse cursor
-ShowCursor;
+% ShowCursor;
 
 % Done!
 disp('Experiment Finished')
