@@ -305,33 +305,26 @@ for trial = 1:numTrials
     for i = 1:stimTimeFrames
 
         % Draw the square to the screen.
-        % Screen('FillRect', window, rectColor, centeredRect);
 		Screen('DrawTexture', window, cue_txts{taskCon+1} );
 
         vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
 
-        % Wait for a keyboard button signaling the observers response.
-        % The space key signals a "Go" response labeled by 1. 
-        % You can also press escape if you want to exit the program
         [keyIsDown,secs, keyCode] = KbCheck(-1);
-		[tX,tY,tB] = GetMouse(window);
+        if keyCode(escapeKey), isQuitEarly = true; break; end % end trial and trial loop
 
-        if keyCode(escapeKey)
-            % ShowCursor;
-            % sca;
-            % return
-			isQuitEarly = true;
-			break
-		elseif tB(1) % instead of: keyCode(spaceKey)
+		[tX,tY,tB] = GetMouse(window);
+		if tB(1)
             % Update data variables if mouse clicked (instead of space key)
+			disp([tX,tY,tB(1)]);  
             response = 1;
             endResp = GetSecs;
             rt = endResp - startResp;
-            break
-        end
+            break; % end trial
+		end
+		
 	end
 
-	if isQuitEarly, break; end
+	if isQuitEarly, break; end % end trial loop
 
     % Clear the screen ready for a response
     Screen('FillRect', window, grey);
