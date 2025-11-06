@@ -1,3 +1,10 @@
+
+
+% downloaded as:
+% https://github.com/altunalia/go-nogo-task-demo/tree/main:gonogo_demo.m
+
+
+
 % Clear the workspace
 close all;
 clear;
