@@ -17,7 +17,7 @@ sca;
 % Debug view toggle
 % Altering the screen size 
 % (0: experimental -> full screen | 1: debugging -> 800x450 application window)
-debugMode = 0;  
+debugMode = 1;  
 
 % Observer number
 obsNum = 1;
@@ -199,6 +199,7 @@ waitframes = 1;
 % as a response key for the task and the escape key as an exit/reset key
 escapeKey = KbName('ESCAPE');
 spaceKey = KbName('space');
+enterKey = KbName('return');
 
 % Hide the mouse cursor
 % HideCursor;
@@ -313,16 +314,23 @@ for trial = 1:numTrials
         [keyIsDown,secs, keyCode] = KbCheck(-1);
         if keyCode(escapeKey), isQuitEarly = true; break; end % end trial and trial loop
 
-		[tX,tY,tB] = GetMouse(window);
-		if tB(1)
-            % Update data variables if mouse clicked (instead of space key)
-			disp([tX,tY,tB(1)]);
-			if ~IsInRect(tX,tY,centeredRect), continue; end
+		if keyCode(enterKey)
             response = 1;
             endResp = GetSecs;
             rt = endResp - startResp;
             break; % end trial
 		end
+
+		% [tX,tY,tB] = GetMouse(window);
+		% if tB(1)
+        %     % Update data variables if mouse clicked (instead of space key)
+		% 	disp([tX,tY,tB(1)]);
+		% 	if ~IsInRect(tX,tY,centeredRect), continue; end
+        %     response = 1;
+        %     endResp = GetSecs;
+        %     rt = endResp - startResp;
+        %     break; % end trial
+		% end
 		
 	end
 
@@ -343,6 +351,7 @@ for trial = 1:numTrials
     % Add the data to the data matrix for this trial
     dataMat(trial, :) = [taskCon response rt correctness];
     
+	while KbCheck, ; end
     % Inter trial interval screen
     for i = 1:isiTimeFrames
         Screen('FillRect', window, grey);
