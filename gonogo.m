@@ -51,7 +51,7 @@ end
 % end
 
 workf = fileparts(which(mfilename('fullpath'))); % working folder, i.e. the one containing this mfile
-resf = fullfile( workf, 'Results' ); % results folder
+resf = fullfile( workf, 'Results', 'gonogo' ); % results folder
 if ~isfolder( resf ), mkdir( resf ); end
 
 sbj_resf = uigetdir( resf, 'Choose or create new Subject folder:' );
@@ -321,16 +321,18 @@ for trial = 1:numTrials
             break; % end trial
 		end
 
-		% [tX,tY,tB] = GetMouse(window);
+		[tX,tY,tB] = GetMouse(window);
 		% if tB(1)
-        %     % Update data variables if mouse clicked (instead of space key)
-		% 	disp([tX,tY,tB(1)]);
-		% 	if ~IsInRect(tX,tY,centeredRect), continue; end
-        %     response = 1;
-        %     endResp = GetSecs;
-        %     rt = endResp - startResp;
-        %     break; % end trial
-		% end
+		if any( tB )
+            % Update data variables if mouse clicked (instead of space key)
+			% disp([tX,tY,tB(1)]);
+			disp([tX,tY,tB]);
+			if ~IsInRect(tX,tY,centeredRect), continue; end
+            response = 1;
+            endResp = GetSecs;
+            rt = endResp - startResp;
+            break; % end trial
+		end
 		
 	end
 
