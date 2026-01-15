@@ -1,6 +1,6 @@
 % TestAudioScripting.m
 
-function TestAudioScripting(repetitions, wavfilename, device)
+function TestAudioScripting
 
 % Running on PTB-3? Abort otherwise.
 AssertOpenGL;
@@ -11,15 +11,36 @@ stimsf = fullfile( workf, 'Stims', 'gonogo' );
 prompt_aud_f = fullfile( stimsf, 'Gonogo audio' );
 cue_img_f = fullfile( stimsf, 'Gonogo visuals' );
 
+% set up everything needed by present_image function
+debugMode = 1;
+fixCrossDimPix = 40;
+lineWidthPix = 4;
+[ cue_ffs, cue_txts, white, grey, black, colours, window, windowRect, ifi, ...
+	xCenter, yCenter, xCoords, yCoords, allCoords, baseRect, centeredRect ] = deal( [] );
+setup_cue_images;
+
+% white = WhiteIndex(screenNumber);
+% grey = white / 2;
+% black = BlackIndex(screenNumber);
+% colours = struct('black', [0, 0, 0], 'white', [255, 255, 255], ...
+% [window, windowRect]
+% ifi
+% [xCenter, yCenter]
+% fixation cross coordinates
+% xCoords = [-fixCrossDimPix fixCrossDimPix 0 0];
+% yCoords = [0 0 -fixCrossDimPix fixCrossDimPix];
+% allCoords = [xCoords; yCoords];
+% baseRect = [0 0 200 200];
+% 
+% % Center the rectangle on the centre of the screen
+% centeredRect = CenterRect(baseRect, windowRect);
+
+
 % set up everything needed by play_audio_prompt function
 freq = 48000;
 [ device, audio_fnms, wbs, pahandle ] = deal( [] );
 setup_audio_prompts;
 nfnms = numel(audio_fnms);
-
-% set up everything needed by present_image function
-[ cue_ffs, cue_txts ] = deal( [] );
-setup_cue_images;
 
 n_prac_trls = 10;
 n_test_trls = 100;
@@ -52,7 +73,7 @@ run_test_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
 
 % Close the audio device:
 PsychPortAudio('Close', pahandle);
-
+Screen('CloseAll');
 
 	function setup_audio_prompts
 
@@ -105,6 +126,65 @@ PsychPortAudio('Close', pahandle);
 
 	function setup_cue_images
 
+		PsychDefaultSetup(2);
+		Screen('Preference', 'SkipSyncTests', 2); % for demo only; check for real experiment
+		rng('shuffle'); % freshen the random number generator
+		screenNumber = max(Screen('Screens')); % will be external monitor if present
+		white = WhiteIndex(screenNumber);
+		grey = white / 2;
+		black = BlackIndex(screenNumber);
+		colours = struct('black', [0, 0, 0], 'white', [255, 255, 255], ...
+    		'red', [255, 0  , 0  ], 'blue', [0  , 0, 205  ]);
+		
+		if debugMode == 1
+    		% Open the screen
+    		% [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [0 0 800 450], [], [], [], [], [], kPsychGUIWindow);
+    		[window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [100 100 900 550], [], [], [], [], [], kPsychGUIWindow);
+		
+		else
+    		% Open the screen
+    		[window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], 32, 2);
+		end
+		
+		% Flip to clear
+		Screen('Flip', window);
+		
+		% Query the inter-frame-interval. This refers to the minimum possible time
+		% between drawing to the screen
+		ifi = Screen('GetFlipInterval', window);
+		
+		% Setup the text type for the window
+		Screen('TextFont', window, 'Ariel');
+		Screen('TextSize', window, 40);
+		
+		% Query and set the maximum priority level
+		topPriorityLevel = MaxPriority(window);
+		Priority(topPriorityLevel);
+		
+		% Get the centre coordinate of the window
+		[xCenter, yCenter] = RectCenter(windowRect);
+		
+		
+		%----------------------------------------------------------------------
+		%                       Fixation Cross
+		%----------------------------------------------------------------------
+		
+		% fixation cross coordinates
+		xCoords = [-fixCrossDimPix fixCrossDimPix 0 0];
+		yCoords = [0 0 -fixCrossDimPix fixCrossDimPix];
+		allCoords = [xCoords; yCoords];
+		
+		%----------------------------------------------------------------------
+		%                       Target Square
+		%----------------------------------------------------------------------
+		
+		% Make a base Rect of 200 by 200 pixels. This is the rect which defines the
+		% size of our rectangle in pixels.
+		% The coordinates define the top left and bottom right coordinates of our rect
+		% [top-left-x top-left-y bottom-right-x bottom-right-y].
+		baseRect = [0 0 200 200];
+		centeredRect = CenterRect(baseRect, windowRect);
+
 		img_fnms = {
 		'apples.jpg'
 		'apple.jpg'
@@ -122,14 +202,17 @@ PsychPortAudio('Close', pahandle);
 		'x.jpg'
 		};
 
-		% d = dir( fullfile( cue_img_f, img_fnms ) );
-		% cue_ffs = fullfile( {d.folder}', {d.name}' );
-		% cue_txts = cellfun( @(f) Screen('MakeTexture', window, imread(f)), cue_ffs, 'uniformoutput', false );
-
+		cue_ffs = fullfile( cue_img_f, img_fnms );
+		cue_txts = cellfun( @(f) Screen('MakeTexture', window, imread(f)), cue_ffs, 'uniformoutput', false );
+		img_fnms = cellfun( @(f) f(1:end-4), img_fnms, uniformoutput=false );
+		cue_txts = [ img_fnms cue_txts ]';
+		cue_txts = struct( cue_txts{:} ); % cue textures now addressable as struct fields
+		
 	end
 
 	function present_image( aImg )
 		disp( [ 'showing' aImg ] );
+		Screen('DrawTexture', window, cue_txts.(aImg) );
 	end
 
 	function run_practice_trials( aTarg,aTargPrompt )
