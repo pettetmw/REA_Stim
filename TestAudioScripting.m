@@ -19,61 +19,77 @@ lineWidthPix = 4;
 	xCenter, yCenter, xCoords, yCoords, allCoords, baseRect, centeredRect ] = deal( [] );
 setup_cue_images;
 
-% white = WhiteIndex(screenNumber);
-% grey = white / 2;
-% black = BlackIndex(screenNumber);
-% colours = struct('black', [0, 0, 0], 'white', [255, 255, 255], ...
-% [window, windowRect]
-% ifi
-% [xCenter, yCenter]
-% fixation cross coordinates
-% xCoords = [-fixCrossDimPix fixCrossDimPix 0 0];
-% yCoords = [0 0 -fixCrossDimPix fixCrossDimPix];
-% allCoords = [xCoords; yCoords];
-% baseRect = [0 0 200 200];
-% 
-% % Center the rectangle on the centre of the screen
-% centeredRect = CenterRect(baseRect, windowRect);
-
-
 % set up everything needed by play_audio_prompt function
 freq = 48000;
 [ device, audio_fnms, wbs, pahandle ] = deal( [] );
 setup_audio_prompts;
 nfnms = numel(audio_fnms);
 
-n_prac_trls = 10;
-n_test_trls = 100;
+% set up trial schedule
+n_prac_trls = 10; % number of practice trials
+n_test_trls = 100; % number of test trials
+n_tot_trls = 4 * n_test_trls; % total number of trials
+iTrl = 0; % index of the current trial; incremented by run_trials()
+nt_per_d = 4;
+trl_sched = []; % sequence of targets (1) or distractors (2)
+% assigned by set_trial_schedule() before each call to run_trials()
 
+% trial timing
+stim_dur = 1.0; % stimulus duration
+trl_dur = 2.0; % trial duration
+tslr = 20; % trial sampling loop rate, Hz
+
+% responses
+rsp_accs = nan(n_tot_trls,1); % response accuracies; true for response to target or no reponse to distractor
+rsp_rts = nan(n_tot_trls,1); % response reaction times
+
+escapeKey = KbName('ESCAPE');
+spaceKey = KbName('space');
+enterKey = KbName('return');
+
+
+% preamble
 present_image( 'apples' );
 play_audio_prompt('lets_pick_some_fruit');
-play_audio_prompt('Woohoo_version_1');
+erase_screen;
 
-% clear screen
+isQuitEarly = false;
+isPractice = true;
 
-run_practice_trials( 'apple', 'touch_when_you_see_an_apple' );
+set_trial_schedule( 10 );
+trl_sched(:) = 1;
+run_trials( 'apple', 'touch_when_you_see_an_apple', [], [] );
 
-run_practice_trials( 'worm', 'now_do_not_touch_worm' );
+set_trial_schedule( 10 );
+trl_sched(:) = 2;
+run_trials( 'worm', 'now_do_not_touch_worm', [], [] );
+
+isPractice = false;
 
 %clear screen
 play_audio_prompt('apple_or_worm'); % transitional instruction
 
-run_test_trials( 'apple', 'remember_apple', 'worm', 'do_not_touch_worm' );
+set_trial_schedule( 100 );
+run_trials( 'apple', 'remember_apple', 'worm', 'do_not_touch_worm' );
+if isQuitEarly, wrap_up; return; end
 
-run_test_trials( 'banana', 'touch_banana', 'monkey', 'do_not_touch_monkey' );
+set_trial_schedule( 100 );
+run_trials( 'banana', 'touch_banana', 'monkey', 'do_not_touch_monkey' );
+if isQuitEarly, wrap_up; return; end
 
-run_test_trials( 'strawberry2', 'touch_strawberry', 'squirrel', 'do_not_touch_squirrel' );
+set_trial_schedule( 100 );
+run_trials( 'strawberry2', 'touch_strawberry', 'squirrel', 'do_not_touch_squirrel' );
+if isQuitEarly, wrap_up; return; end
 
-run_test_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
+set_trial_schedule( 100 );
+run_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
+wrap_up;
 
 
 % for i = 1:nfnms
 % 	play_audio_prompt(audio_fnms{i});
 % end
 
-% Close the audio device:
-PsychPortAudio('Close', pahandle);
-Screen('CloseAll');
 
 	function setup_audio_prompts
 
@@ -98,6 +114,7 @@ Screen('CloseAll');
 
 		'ready.m4a'
 		'Woohoo_version_1.m4a'
+		'beep2.wav'
 		};
 		
 		audio_ffs = fullfile( prompt_aud_f, audio_fnms );
@@ -210,36 +227,109 @@ Screen('CloseAll');
 		
 	end
 
+	function set_trial_schedule( a_ntrls )
+		n_per_block = nt_per_d + 1;
+		n_blocks = a_ntrls / n_per_block;
+		trl_sched = repmat( eye( n_per_block ) + ones( n_per_block ), 1, n_blocks );
+		trl_sched = trl_sched( :, randperm(a_ntrls) );
+		trl_sched = trl_sched(:);
+	end
+
 	function present_image( aImg )
-		disp( [ 'showing' aImg ] );
+		% disp( [ 'showing' aImg ] );
 		Screen('DrawTexture', window, cue_txts.(aImg) );
+		Screen('Flip', window );
 	end
 
-	function run_practice_trials( aTarg,aTargPrompt )
+	function erase_screen()
+		Screen('FillRect', window, white);
+		Screen('Flip', window);
+	end
+
+	function run_trials( aTarg,aTargPrompt,aDist,aDistPrompt )
+
 		% Show Target
 		present_image(aTarg);
 		play_audio_prompt(aTargPrompt);
+		erase_screen;
 		%clear screen
+
+		if ~isempty( aDist )
+			% Show Distractor
+			present_image(aDist);
+			play_audio_prompt(aDistPrompt);
+			erase_screen;
+		end
 		
 		play_audio_prompt('ready');
 
-		% loop over trials
+		stms = { aTarg aDist };
+		if isPractice, stms{2} = aTarg; end % use target only during practice
+
+		n_trls = numel(trl_sched); % determined by calls to set_trial_schedule above
+		for i = 1:n_trls
+			if ~isPractice, iTrl = iTrl + 1; end % otherwise during practice iTrl == 0
+			for sFr = 1:round(trl_dur * tslr) % sampling frame
+				if sFr == 1
+					startResp = GetSecs;
+					if isPractice
+						present_image( stms{ 1 } );
+					else
+						present_image( stms{ trl_sched( iTrl ) } );
+					end
+				end
+				if sFr == round( stim_dur * tslr ) % stimulus ends before the trial does
+					erase_screen;
+				end
+
+				if isPractice, WaitSecs( 1 / tslr ); continue; end % wait for sampling frame to end
+				% otherwise, check for and collect responses...
+
+        		[ ~, ~, keyCode ] = KbCheck(-1);
+        		if keyCode(escapeKey), isQuitEarly = true; break; end % end trial and trial loop
+		
+				if keyCode(enterKey) % detect enter key response
+					rsp_accs(iTrl) = trl_sched(iTrl) == 1; % 1 == target
+            		rsp_rts(iTrl) = GetSecs - startResp;
+            		break; % end trial
+				end
+		
+				[tX,tY,tB] = GetMouse(window);
+				if any( tB )
+            		% Update data variables if mouse clicked (instead of enter key)
+					% disp([tX,tY,tB(1)]);
+					% disp([tX,tY,tB]);
+					if ~IsInRect(tX,tY,windowRect), continue; end
+					rsp_accs(iTrl) = trl_sched(iTrl) == 1; % true if responding to target
+            		rsp_rts(iTrl) = GetSecs - startResp;
+            		break; % end trial
+				end
+
+				WaitSecs( 1 / tslr ); % wait for sampling frame to end
+			end
+
+			erase_screen;
+			if isQuitEarly, break; end % end trial loop
+
+			if isnan( rsp_accs(iTrl) ) % no response during trial
+				rsp_accs(iTrl) = trl_sched(iTrl) == 2; % true if no response to distractor
+        		rsp_rts(iTrl) = 0.0;
+			end
+
+			if rsp_accs(iTrl)
+				present_image('check');
+				play_audio_prompt('Woohoo_version_1');
+			else
+				play_audio_prompt('beep2');
+			end
+
+		end
 
 	end
 
-	function run_test_trials( aTarg,aTargPrompt,aDist,aDistPrompt )
-		% Show Target
-		present_image(aTarg);
-		play_audio_prompt(aTargPrompt);
-		%clear screen
-		% Show Distractor
-		present_image(aDist);
-		play_audio_prompt(aDistPrompt);
-		
-		play_audio_prompt('ready');
-
-		% loop over trials
-
+	function wrap_up()
+		PsychPortAudio('Close', pahandle);
+		Screen('CloseAll');
 	end
 
 end
