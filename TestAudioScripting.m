@@ -15,6 +15,17 @@ stimsf = fullfile( workf, 'Stims', 'gonogo' );
 prompt_aud_f = fullfile( stimsf, 'Gonogo audio' );
 cue_img_f = fullfile( stimsf, 'Gonogo visuals' );
 
+resf = fullfile( workf, 'Results', 'gonogo' ); % results folder
+if ~isfolder( resf ), mkdir( resf ); end
+
+sbj_resf = uigetdir( resf, 'Choose or create new Subject folder:' );
+[~,SID] = fileparts( sbj_resf ); % subject ID
+
+dtag = char(datetime('now','Format','yyMMdd')); % date tag
+sbj_date_resf = fullfile( sbj_resf, [ SID '_' dtag ] ); % subject date result folder
+if ~isfolder(sbj_date_resf), mkdir(sbj_date_resf); end
+
+
 % set up everything needed by present_image function
 debugMode = 1;
 fixCrossDimPix = 40;
@@ -331,6 +342,8 @@ wrap_up;
 	function wrap_up()
 		PsychPortAudio('Close', pahandle);
 		Screen('CloseAll');
+		sid_dttag = [ SID '_' char(datetime('now','Format','yyMMdd_HHmm')) ];
+		save( fullfile( sbj_date_resf, [ sid_dttag '.mat' ] ), 'sid_dttag', 'rsp_accs', 'rsp_rts' );
 	end
 
 end
