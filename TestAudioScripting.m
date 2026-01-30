@@ -40,9 +40,11 @@ freq = 48000;
 setup_audio_prompts;
 
 % set up trial schedule
-n_prac_trls = 10; % number of practice trials
-n_test_trls = 100; % number of test trials
-n_tot_trls = 2 * n_prac_trls + 4 * n_test_trls; % total number of trials
+n_prac_trls = 10; % number of practice trials in each block
+n_tot_prac_trls = n_prac_trls * 2;
+n_test_trls = 100; % number of test trials in each block
+n_tot_test_trls = 4 * n_test_trls;
+n_tot_trls = n_tot_prac_trls + n_tot_test_trls; % total number of trials
 nt_per_d = 4; % number of trials per distractor
 trl_sched = []; % sequence of targets (1) or distractors (2)
 % assigned by set_trial_schedule() before each call to run_trials()
@@ -55,6 +57,7 @@ tslr = 20; % trial sampling loop rate, Hz
 % responses
 rsp_accs = nan(n_tot_trls,1); % response accuracies; true for response to target or no reponse to distractor
 rsp_rts = nan(n_tot_trls,1); % response reaction times
+trg_or_dst = nan(n_tot_trls,1); % target or distractor
 
 escapeKey = KbName('ESCAPE');
 spaceKey = KbName('space');
@@ -320,6 +323,7 @@ wrap_up;
 			erase_screen;
 			if isQuitEarly, break; end % end trial loop
 
+			trg_or_dst(iTrl) = trl_sched(i);
 			if tResponse == 1
 				rsp_accs(iTrl) = trl_sched(i) == 1; % 1 == target
         		rsp_rts(iTrl) = GetSecs - startResp;
@@ -343,7 +347,20 @@ wrap_up;
 		PsychPortAudio('Close', pahandle);
 		Screen('CloseAll');
 		sid_dttag = [ SID '_' char(datetime('now','Format','yyMMdd_HHmm')) ];
-		save( fullfile( sbj_date_resf, [ sid_dttag '.mat' ] ), 'sid_dttag', 'rsp_accs', 'rsp_rts' );
+
+		tIsPrc = zeros( n_tot_trls, 1 );
+		tIsPrc(1:n_tot_prac_trls) = 1;
+
+		tf = ~isnan(trg_or_dst);
+		tIsPrc = tIsPrc(tf);
+		trg_or_dst = trg_or_dst(tf);
+		rsp_accs = rsp_accs(tf);
+		rsp_rts = rsp_rts(tf);
+
+		mat_ff = fullfile( sbj_date_resf, [ sid_dttag '.mat' ] );
+		save( mat_ff, 'sid_dttag', 'tIsPrc', 'trg_or_dst', 'rsp_accs', 'rsp_rts' );
+
+		tbl_ff = fullfile( sbj_date_resf, [ sid_dttag '.csv' ] );
 	end
 
 end
