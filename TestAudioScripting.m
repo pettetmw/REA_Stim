@@ -2,6 +2,10 @@
 
 function TestAudioScripting
 
+%%%
+%%% SETUP
+%%%
+
 % Running on PTB-3? Abort otherwise.
 AssertOpenGL;
 
@@ -23,14 +27,12 @@ setup_cue_images;
 freq = 48000;
 [ device, audio_fnms, wbs, pahandle ] = deal( [] );
 setup_audio_prompts;
-nfnms = numel(audio_fnms);
 
 % set up trial schedule
 n_prac_trls = 10; % number of practice trials
 n_test_trls = 100; % number of test trials
-n_tot_trls = 4 * n_test_trls; % total number of trials
-iTrl = 0; % index of the current trial; incremented by run_trials()
-nt_per_d = 4;
+n_tot_trls = 2 * n_prac_trls + 4 * n_test_trls; % total number of trials
+nt_per_d = 4; % number of trials per distractor
 trl_sched = []; % sequence of targets (1) or distractors (2)
 % assigned by set_trial_schedule() before each call to run_trials()
 
@@ -47,49 +49,54 @@ escapeKey = KbName('ESCAPE');
 spaceKey = KbName('space');
 enterKey = KbName('return');
 
+%%%
+%%% RUN THE TRIALS
+%%%
 
 % preamble
 present_image( 'apples' );
 play_audio_prompt('lets_pick_some_fruit');
 erase_screen;
 
+iTrl = 0; % index of the current trial; incremented by run_trials()
+
 isQuitEarly = false;
 isPractice = true;
 
-set_trial_schedule( 10 );
-trl_sched(:) = 1;
+set_trial_schedule( n_prac_trls );
+trl_sched(:) = 1; % practice only showing targets
 run_trials( 'apple', 'touch_when_you_see_an_apple', [], [] );
+if isQuitEarly, wrap_up; return; end
 
-set_trial_schedule( 10 );
-trl_sched(:) = 2;
-run_trials( 'worm', 'now_do_not_touch_worm', [], [] );
+set_trial_schedule( n_prac_trls );
+trl_sched(:) = 2; % practice only showing distractors
+run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
+if isQuitEarly, wrap_up; return; end
 
 isPractice = false;
 
 %clear screen
 play_audio_prompt('apple_or_worm'); % transitional instruction
 
-set_trial_schedule( 100 );
+set_trial_schedule( n_test_trls );
 run_trials( 'apple', 'remember_apple', 'worm', 'do_not_touch_worm' );
 if isQuitEarly, wrap_up; return; end
 
-set_trial_schedule( 100 );
+set_trial_schedule( n_test_trls );
 run_trials( 'banana', 'touch_banana', 'monkey', 'do_not_touch_monkey' );
 if isQuitEarly, wrap_up; return; end
 
-set_trial_schedule( 100 );
+set_trial_schedule( n_test_trls );
 run_trials( 'strawberry2', 'touch_strawberry', 'squirrel', 'do_not_touch_squirrel' );
 if isQuitEarly, wrap_up; return; end
 
-set_trial_schedule( 100 );
+set_trial_schedule( n_test_trls );
 run_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
 wrap_up;
 
-
-% for i = 1:nfnms
-% 	play_audio_prompt(audio_fnms{i});
-% end
-
+%%%
+%%% HELPER FUNCTIONS
+%%%
 
 	function setup_audio_prompts
 
@@ -228,11 +235,15 @@ wrap_up;
 	end
 
 	function set_trial_schedule( a_ntrls )
-		n_per_block = nt_per_d + 1;
-		n_blocks = a_ntrls / n_per_block;
-		trl_sched = repmat( eye( n_per_block ) + ones( n_per_block ), 1, n_blocks );
-		trl_sched = trl_sched( :, randperm(a_ntrls) );
-		trl_sched = trl_sched(:);
+		if isPractice
+			trl_sched = zeros( a_ntrls, 1 );
+		else
+			n_per_block = nt_per_d + 1;
+			n_blocks = a_ntrls / (n_per_block^2);
+			trl_sched = repmat( eye( n_per_block ) + ones( n_per_block ), 1, n_blocks );
+			trl_sched = trl_sched( :, randperm( size(trl_sched,2) ) );
+			trl_sched = trl_sched(:);
+		end
 	end
 
 	function present_image( aImg )
@@ -248,19 +259,20 @@ wrap_up;
 
 	function run_trials( aTarg,aTargPrompt,aDist,aDistPrompt )
 
-		% Show Target
+		% Show and announce target
+		% (if practice, distractor will be announced here)
 		present_image(aTarg);
 		play_audio_prompt(aTargPrompt);
 		erase_screen;
 		%clear screen
 
-		if ~isempty( aDist )
-			% Show Distractor
+		if ~isempty( aDist ) % otherwise practice
+			% Show and announce distractor
 			present_image(aDist);
 			play_audio_prompt(aDistPrompt);
 			erase_screen;
 		end
-		
+
 		play_audio_prompt('ready');
 
 		stms = { aTarg aDist };
@@ -268,40 +280,26 @@ wrap_up;
 
 		n_trls = numel(trl_sched); % determined by calls to set_trial_schedule above
 		for i = 1:n_trls
-			if ~isPractice, iTrl = iTrl + 1; end % otherwise during practice iTrl == 0
+			iTrl = iTrl + 1;
+			isStimOn = true;
 			for sFr = 1:round(trl_dur * tslr) % sampling frame
 				if sFr == 1
-					startResp = GetSecs;
-					if isPractice
-						present_image( stms{ 1 } );
-					else
-						present_image( stms{ trl_sched( iTrl ) } );
-					end
+					startResp = GetSecs; % start timer for reaction time measurement
+					tResponse = 0;
+					present_image( stms{ trl_sched( i ) } );
 				end
-				if sFr == round( stim_dur * tslr ) % stimulus ends before the trial does
+				if isStimOn && sFr > round( stim_dur * tslr ) % stimulus ends before the trial does
 					erase_screen;
+					isStimOn = false;
 				end
-
-				if isPractice, WaitSecs( 1 / tslr ); continue; end % wait for sampling frame to end
-				% otherwise, check for and collect responses...
 
         		[ ~, ~, keyCode ] = KbCheck(-1);
         		if keyCode(escapeKey), isQuitEarly = true; break; end % end trial and trial loop
 		
-				if keyCode(enterKey) % detect enter key response
-					rsp_accs(iTrl) = trl_sched(iTrl) == 1; % 1 == target
-            		rsp_rts(iTrl) = GetSecs - startResp;
-            		break; % end trial
-				end
-		
-				[tX,tY,tB] = GetMouse(window);
-				if any( tB )
-            		% Update data variables if mouse clicked (instead of enter key)
-					% disp([tX,tY,tB(1)]);
-					% disp([tX,tY,tB]);
-					if ~IsInRect(tX,tY,windowRect), continue; end
-					rsp_accs(iTrl) = trl_sched(iTrl) == 1; % true if responding to target
-            		rsp_rts(iTrl) = GetSecs - startResp;
+				[~,~,tB] = GetMouse(window);
+
+				if keyCode(enterKey) || any( tB )
+					tResponse = 1;
             		break; % end trial
 				end
 
@@ -311,8 +309,11 @@ wrap_up;
 			erase_screen;
 			if isQuitEarly, break; end % end trial loop
 
-			if isnan( rsp_accs(iTrl) ) % no response during trial
-				rsp_accs(iTrl) = trl_sched(iTrl) == 2; % true if no response to distractor
+			if tResponse == 1
+				rsp_accs(iTrl) = trl_sched(i) == 1; % 1 == target
+        		rsp_rts(iTrl) = GetSecs - startResp;
+			else
+				rsp_accs(iTrl) = trl_sched(i) == 2; % true if no response to distractor
         		rsp_rts(iTrl) = 0.0;
 			end
 
