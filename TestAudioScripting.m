@@ -91,7 +91,6 @@ run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distr
 if isQuitEarly, wrap_up; return; end
 
 isPractice = false;
-iTrl = 20;
 
 %clear screen
 play_audio_prompt('apple_or_worm'); % transitional instruction
