@@ -77,19 +77,21 @@ erase_screen;
 iTrl = 0; % index of the current trial; incremented by run_trials()
 
 isQuitEarly = false;
-isPractice = true;
 
-set_trial_schedule( n_prac_trls );
-trl_sched(:) = 1; % practice only showing targets
-run_trials( 'apple', 'touch_when_you_see_an_apple', [], [] );
-if isQuitEarly, wrap_up; return; end
-
-set_trial_schedule( n_prac_trls );
-trl_sched(:) = 2; % practice only showing distractors
-run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
-if isQuitEarly, wrap_up; return; end
+% isPractice = true;
+% 
+% set_trial_schedule( n_prac_trls );
+% trl_sched(:) = 1; % practice only showing targets
+% run_trials( 'apple', 'touch_when_you_see_an_apple', [], [] );
+% if isQuitEarly, wrap_up; return; end
+% 
+% set_trial_schedule( n_prac_trls );
+% trl_sched(:) = 2; % practice only showing distractors
+% run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
+% if isQuitEarly, wrap_up; return; end
 
 isPractice = false;
+iTrl = 20;
 
 %clear screen
 play_audio_prompt('apple_or_worm'); % transitional instruction
@@ -284,7 +286,6 @@ wrap_up;
 		Screen('Flip', window );
 	end
 
-
 	function run_trials( aTarg,aTargPrompt,aDist,aDistPrompt )
 
 		% Show and announce target
@@ -376,7 +377,12 @@ wrap_up;
 		mat_ff = fullfile( sbj_date_resf, [ sid_dttag '.mat' ] );
 		save( mat_ff, 'sid_dttag', 'tIsPrc', 'trg_or_dst', 'rsp_accs', 'rsp_rts' );
 
+		sid_dttags = repmat( {sid_dttag}, size(tIsPrc) );
+		rsp_rts = cellfun( @(r) sprintf('%1.3f',r), num2cell(rsp_rts), UniformOutput=false );
+		tbl = [ sid_dttags num2cell( [ tIsPrc trg_or_dst rsp_accs ] ) rsp_rts ];
+		var_names = { 'sid_dttag', 'tIsPrc', 'trg_or_dst', 'rsp_accs', 'rsp_rts' };
 		tbl_ff = fullfile( sbj_date_resf, [ sid_dttag '.csv' ] );
+		writetable( cell2table(tbl,"VariableNames",var_names), tbl_ff );
 	end
 
 end
