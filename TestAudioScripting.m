@@ -14,6 +14,7 @@ workf = fileparts(which(mfilename('fullpath'))); % working folder, i.e. the one 
 stimsf = fullfile( workf, 'Stims', 'gonogo' );
 prompt_aud_f = fullfile( stimsf, 'Gonogo audio' );
 cue_img_f = fullfile( stimsf, 'Gonogo visuals' );
+break_mov_f = fullfile( workf, 'Stims', 'break_movies' );
 
 resf = fullfile( workf, 'Results', 'gonogo' ); % results folder
 if ~isfolder( resf ), mkdir( resf ); end
@@ -33,6 +34,13 @@ lineWidthPix = 4;
 [ cue_ffs, cue_txts, white, grey, black, colours, window, windowRect, ifi, ...
 	xCenter, yCenter, xCoords, yCoords, allCoords, baseRect, centeredRect ] = deal( [] );
 setup_cue_images;
+
+% set up everything needed by show_break_movie function
+[ brk_mov_p, break_mov_t ] = deal( [], 0 );
+mov_list = { 'Toy story 1.mp4', 'Toy story 1.mp4', 'Toy story 1.mp4' };
+break_mov_fnm = mov_list{ listdlg("PromptString","Choose movie file",...
+	"ListString", mov_list ) };
+setup_break_movie( break_mov_fnm );
 
 % set up everything needed by play_audio_prompt function
 freq = 48000;
@@ -68,6 +76,8 @@ enterKey = KbName('return');
 %%%
 %%% RUN THE TRIALS
 %%%
+
+show_break_movie;
 
 % preamble
 present_image( 'apples' );
@@ -267,6 +277,34 @@ wrap_up;
 		trl_iti = trl_iti( randperm( a_ntrls ) );
 	end
 
+	function setup_break_movie( a_mov_ff )
+		brk_mov_p = Screen('OpenMovie', window, fullfile( break_mov_f, a_mov_ff ) );
+	end
+
+	function show_break_movie
+		% disp( 'showing break movie' );
+		% Screen('SetMovieTimeIndex', brk_mov_p, break_mov_t );
+		Screen('PlayMovie', brk_mov_p, 1 );
+		while ~KbCheck
+        	tex = Screen('GetMovieImage', window, brk_mov_p );
+        	% Valid texture returned? A negative value means end of movie reached:
+        	if tex<=0
+            	% We're done, break out of loop:
+            	break;
+        	end
+        	% Draw the new texture immediately to screen:
+        	Screen('DrawTexture', window, tex);
+        	% Update display:
+        	Screen('Flip', window);
+        	% Release texture:
+        	Screen('Close', tex);
+		end
+		% break_mov_t = Screen('GeetMovieTimeIndex', brk_mov_p );
+		Screen('PlayMovie', brk_mov_p, 0 );
+		Screen( 'CloseMovie', brk_mov_p );
+
+	end
+
 	function present_image( aImg )
 		% disp( [ 'showing' aImg ] );
 		Screen('DrawTexture', window, cue_txts.(aImg) );
@@ -361,6 +399,7 @@ wrap_up;
 
 	function wrap_up()
 		PsychPortAudio('Close', pahandle);
+		% Screen( 'CloseMovie', brk_mov_p );
 		Screen('CloseAll');
 		sid_dttag = [ SID '_' char(datetime('now','Format','yyMMdd_HHmm')) ];
 
