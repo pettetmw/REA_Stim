@@ -78,17 +78,17 @@ iTrl = 0; % index of the current trial; incremented by run_trials()
 
 isQuitEarly = false;
 
-% isPractice = true;
-% 
-% set_trial_schedule( n_prac_trls );
-% trl_sched(:) = 1; % practice only showing targets
-% run_trials( 'apple', 'touch_when_you_see_an_apple', [], [] );
-% if isQuitEarly, wrap_up; return; end
-% 
-% set_trial_schedule( n_prac_trls );
-% trl_sched(:) = 2; % practice only showing distractors
-% run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
-% if isQuitEarly, wrap_up; return; end
+isPractice = true;
+
+set_trial_schedule( n_prac_trls );
+trl_sched(:) = 1; % practice only showing targets
+run_trials( 'apple', 'touch_when_you_see_an_apple', [], [] );
+if isQuitEarly, wrap_up; return; end
+
+set_trial_schedule( n_prac_trls );
+trl_sched(:) = 2; % practice only showing distractors
+run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
+if isQuitEarly, wrap_up; return; end
 
 isPractice = false;
 iTrl = 20;
