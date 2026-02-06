@@ -26,6 +26,13 @@ dtag = char(datetime('now','Format','yyMMdd')); % date tag
 sbj_date_resf = fullfile( sbj_resf, [ SID '_' dtag ] ); % subject date result folder
 if ~isfolder(sbj_date_resf), mkdir(sbj_date_resf); end
 
+% set up everything needed by show_break_movie function
+[ brk_mov_p, break_mov_t ] = deal( [], 0 );
+mov_list = { 'Toy story 1.mp4', 'Toy story 1.mp4', 'Toy story 1.mp4' };
+break_mov_fnm = mov_list{ listdlg("PromptString","Choose movie file",...
+	"ListString", mov_list ) };
+break_mov_ff = fullfile( break_mov_f, break_mov_fnm );
+
 
 % set up everything needed by present_image function
 debugMode = 1;
@@ -35,12 +42,12 @@ lineWidthPix = 4;
 	xCenter, yCenter, xCoords, yCoords, allCoords, baseRect, centeredRect ] = deal( [] );
 setup_cue_images;
 
-% set up everything needed by show_break_movie function
-[ brk_mov_p, break_mov_t ] = deal( [], 0 );
-mov_list = { 'Toy story 1.mp4', 'Toy story 1.mp4', 'Toy story 1.mp4' };
-break_mov_fnm = mov_list{ listdlg("PromptString","Choose movie file",...
-	"ListString", mov_list ) };
-setup_break_movie( break_mov_fnm );
+% % set up everything needed by show_break_movie function
+% [ brk_mov_p, break_mov_t ] = deal( [], 0 );
+% mov_list = { 'Toy story 1.mp4', 'Toy story 1.mp4', 'Toy story 1.mp4' };
+% break_mov_fnm = mov_list{ listdlg("PromptString","Choose movie file",...
+% 	"ListString", mov_list ) };
+% setup_break_movie( break_mov_fnm );
 
 % set up everything needed by play_audio_prompt function
 freq = 48000;
@@ -77,8 +84,6 @@ enterKey = KbName('return');
 %%% RUN THE TRIALS
 %%%
 
-show_break_movie;
-
 % preamble
 present_image( 'apples' );
 play_audio_prompt('lets_pick_some_fruit');
@@ -100,8 +105,6 @@ trl_sched(:) = 2; % practice only showing distractors
 run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie;
-
 isPractice = false;
 
 %clear screen
@@ -111,19 +114,19 @@ set_trial_schedule( n_test_trls );
 run_trials( 'apple', 'remember_apple', 'worm', 'do_not_touch_worm' );
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie;
+show_break_movie( break_mov_ff );
 
 set_trial_schedule( n_test_trls );
 run_trials( 'banana', 'touch_banana', 'monkey', 'do_not_touch_monkey' );
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie;
+show_break_movie( break_mov_ff );
 
 set_trial_schedule( n_test_trls );
 run_trials( 'strawberry2', 'touch_strawberry', 'squirrel', 'do_not_touch_squirrel' );
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie;
+show_break_movie( break_mov_ff );
 
 set_trial_schedule( n_test_trls );
 run_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
@@ -287,12 +290,14 @@ wrap_up;
 
 	function setup_break_movie( a_mov_ff )
 		brk_mov_p = Screen('OpenMovie', window, fullfile( break_mov_f, a_mov_ff ) );
-		break_mov_t = Screen('GetMovieTimeIndex', brk_mov_p );
+		% break_mov_t = Screen('GetMovieTimeIndex', brk_mov_p );
 	end
 
-	function show_break_movie
+	function show_break_movie( a_mov_ff )
 		% disp( 'showing break movie' );
 		% Screen('SetMovieTimeIndex', brk_mov_p, break_mov_t );
+		brk_mov_p = Screen('OpenMovie', window, a_mov_ff );
+		break_mov_t = Screen('GetMovieTimeIndex', brk_mov_p );
 		Screen('PlayMovie', brk_mov_p, 1 );
 		while ~KbCheck
         	tex = Screen('GetMovieImage', window, brk_mov_p );
@@ -310,8 +315,7 @@ wrap_up;
 		end
 		% break_mov_t = Screen('GetMovieTimeIndex', brk_mov_p );
 		Screen('PlayMovie', brk_mov_p, 0 );
-		% Screen( 'CloseMovie', brk_mov_p );
-
+		Screen( 'CloseMovie', brk_mov_p );
 	end
 
 	function present_image( aImg )
@@ -408,7 +412,7 @@ wrap_up;
 
 	function wrap_up()
 		PsychPortAudio('Close', pahandle);
-		Screen( 'CloseMovie', brk_mov_p );
+		% Screen( 'CloseMovie', brk_mov_p );
 		Screen('CloseAll');
 		sid_dttag = [ SID '_' char(datetime('now','Format','yyMMdd_HHmm')) ];
 
