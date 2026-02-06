@@ -39,7 +39,7 @@ debugMode = 1;
 fixCrossDimPix = 40;
 lineWidthPix = 4;
 [ cue_ffs, cue_txts, white, grey, black, colours, window, windowRect, ifi, ...
-	xCenter, yCenter, xCoords, yCoords, allCoords, baseRect, centeredRect ] = deal( [] );
+	xCenter, yCenter, xCoords, yCoords, allCoords, trigRect ] = deal( [] );
 setup_cue_images;
 
 % % set up everything needed by show_break_movie function
@@ -85,7 +85,7 @@ enterKey = KbName('return');
 %%%
 
 % preamble
-present_image( 'apples' );
+present_image( 'apples', false );
 play_audio_prompt('lets_pick_some_fruit');
 erase_screen;
 
@@ -236,16 +236,7 @@ wrap_up;
 		yCoords = [0 0 -fixCrossDimPix fixCrossDimPix];
 		allCoords = [xCoords; yCoords];
 		
-		%----------------------------------------------------------------------
-		%                       Target Square
-		%----------------------------------------------------------------------
-		
-		% Make a base Rect of 200 by 200 pixels. This is the rect which defines the
-		% size of our rectangle in pixels.
-		% The coordinates define the top left and bottom right coordinates of our rect
-		% [top-left-x top-left-y bottom-right-x bottom-right-y].
-		baseRect = [0 0 200 200];
-		centeredRect = CenterRect(baseRect, windowRect);
+		trigRect = [0 0 50 50];
 
 		img_fnms = {
 		'apples.jpg'
@@ -318,19 +309,24 @@ wrap_up;
 		Screen( 'CloseMovie', brk_mov_p );
 	end
 
-	function present_image( aImg )
+	function present_image( aImg, aIsTrigOn )
 		% disp( [ 'showing' aImg ] );
+		if ~aIsTrigOn
+			Screen('FillRect', window, colours.black, trigRect );
+		end
 		Screen('DrawTexture', window, cue_txts.(aImg) );
 		Screen('Flip', window );
 	end
 
 	function erase_screen()
 		Screen('FillRect', window, white);
+		Screen('FillRect', window, colours.black, trigRect )
 		Screen('Flip', window);
 	end
 
 	function draw_fixation()
 		Screen('FillRect', window, white);
+		Screen('FillRect', window, colours.black, trigRect )
         Screen('DrawLines', window, allCoords,...
             lineWidthPix, colours.black, [xCenter yCenter] );
 		Screen('Flip', window );
@@ -340,14 +336,14 @@ wrap_up;
 
 		% Show and announce target
 		% (if practice, distractor will be announced here)
-		present_image(aTarg);
+		present_image(aTarg,false);
 		play_audio_prompt(aTargPrompt);
 		erase_screen;
 		%clear screen
 
 		if ~isempty( aDist ) % otherwise practice
 			% Show and announce distractor
-			present_image(aDist);
+			present_image(aDist,false);
 			play_audio_prompt(aDistPrompt);
 			erase_screen;
 		end
@@ -360,14 +356,18 @@ wrap_up;
 		n_trls = numel(trl_sched); % determined by calls to set_trial_schedule above
 		for i = 1:n_trls
 			iTrl = iTrl + 1;
-			isStimOn = true;
+			[isStimOn, isTrigOn] = deal( true );
 			for sFr = 1:round(trl_dur * tslr) % sampling frame
 				if sFr == 1
 					draw_fixation;
 					WaitSecs( trl_iti(i) );
 					startResp = GetSecs; % start timer for reaction time measurement
 					tResponse = 0;
-					present_image( stms{ trl_sched( i ) } );
+					present_image( stms{ trl_sched( i ) }, true );
+				end
+				if isTrigOn && sFr > round( 0.2 * tslr ) % trigger ends before the stimulus does
+					present_image( stms{ trl_sched( i ) }, false );
+					isTrigOn = false;
 				end
 				if isStimOn && sFr > round( stim_dur * tslr ) % stimulus ends before the trial does
 					erase_screen;
@@ -400,8 +400,9 @@ wrap_up;
 			end
 
 			if rsp_accs(iTrl)
-				present_image('check');
+				present_image('check',false);
 				play_audio_prompt('Woohoo_version_1');
+				erase_screen;
 			else
 				play_audio_prompt('beep2');
 			end
