@@ -100,6 +100,8 @@ trl_sched(:) = 2; % practice only showing distractors
 run_trials( 'worm', 'now_do_not_touch_worm', [], [] ); % announce only the distractor
 if isQuitEarly, wrap_up; return; end
 
+show_break_movie;
+
 isPractice = false;
 
 %clear screen
@@ -109,13 +111,19 @@ set_trial_schedule( n_test_trls );
 run_trials( 'apple', 'remember_apple', 'worm', 'do_not_touch_worm' );
 if isQuitEarly, wrap_up; return; end
 
+show_break_movie;
+
 set_trial_schedule( n_test_trls );
 run_trials( 'banana', 'touch_banana', 'monkey', 'do_not_touch_monkey' );
 if isQuitEarly, wrap_up; return; end
 
+show_break_movie;
+
 set_trial_schedule( n_test_trls );
 run_trials( 'strawberry2', 'touch_strawberry', 'squirrel', 'do_not_touch_squirrel' );
 if isQuitEarly, wrap_up; return; end
+
+show_break_movie;
 
 set_trial_schedule( n_test_trls );
 run_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
@@ -279,6 +287,7 @@ wrap_up;
 
 	function setup_break_movie( a_mov_ff )
 		brk_mov_p = Screen('OpenMovie', window, fullfile( break_mov_f, a_mov_ff ) );
+		break_mov_t = Screen('GetMovieTimeIndex', brk_mov_p );
 	end
 
 	function show_break_movie
@@ -299,9 +308,9 @@ wrap_up;
         	% Release texture:
         	Screen('Close', tex);
 		end
-		% break_mov_t = Screen('GeetMovieTimeIndex', brk_mov_p );
+		% break_mov_t = Screen('GetMovieTimeIndex', brk_mov_p );
 		Screen('PlayMovie', brk_mov_p, 0 );
-		Screen( 'CloseMovie', brk_mov_p );
+		% Screen( 'CloseMovie', brk_mov_p );
 
 	end
 
@@ -399,7 +408,7 @@ wrap_up;
 
 	function wrap_up()
 		PsychPortAudio('Close', pahandle);
-		% Screen( 'CloseMovie', brk_mov_p );
+		Screen( 'CloseMovie', brk_mov_p );
 		Screen('CloseAll');
 		sid_dttag = [ SID '_' char(datetime('now','Format','yyMMdd_HHmm')) ];
 
