@@ -29,9 +29,6 @@ if ~isfolder(sbj_date_resf), mkdir(sbj_date_resf); end
 % set up everything needed by show_break_movie function
 [ brk_mov_p, break_mov_t ] = deal( [], 0 );
 mov_list = { 'Toy story 1.mp4', 'Toy story 1.mp4', 'Toy story 1.mp4' };
-break_mov_fnm = mov_list{ listdlg("PromptString","Choose movie file",...
-	"ListString", mov_list ) };
-break_mov_ff = fullfile( break_mov_f, break_mov_fnm );
 
 
 % set up everything needed by present_image function
@@ -41,13 +38,6 @@ lineWidthPix = 4;
 [ cue_ffs, cue_txts, white, grey, black, colours, window, windowRect, ifi, ...
 	xCenter, yCenter, xCoords, yCoords, allCoords, trigRect ] = deal( [] );
 setup_cue_images;
-
-% % set up everything needed by show_break_movie function
-% [ brk_mov_p, break_mov_t ] = deal( [], 0 );
-% mov_list = { 'Toy story 1.mp4', 'Toy story 1.mp4', 'Toy story 1.mp4' };
-% break_mov_fnm = mov_list{ listdlg("PromptString","Choose movie file",...
-% 	"ListString", mov_list ) };
-% setup_break_movie( break_mov_fnm );
 
 % set up everything needed by play_audio_prompt function
 freq = 48000;
@@ -114,19 +104,19 @@ set_trial_schedule( n_test_trls );
 run_trials( 'apple', 'remember_apple', 'worm', 'do_not_touch_worm' );
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie( break_mov_ff );
+show_break_movie( fullfile( break_mov_f, mov_list{1} ) );
 
 set_trial_schedule( n_test_trls );
 run_trials( 'banana', 'touch_banana', 'monkey', 'do_not_touch_monkey' );
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie( break_mov_ff );
+show_break_movie( fullfile( break_mov_f, mov_list{2} ) );
 
 set_trial_schedule( n_test_trls );
 run_trials( 'strawberry2', 'touch_strawberry', 'squirrel', 'do_not_touch_squirrel' );
 if isQuitEarly, wrap_up; return; end
 
-show_break_movie( break_mov_ff );
+show_break_movie( fullfile( break_mov_f, mov_list{3} ) );
 
 set_trial_schedule( n_test_trls );
 run_trials( 'orange', 'touch_orange', 'bird', 'do_not_touch_bird' );
