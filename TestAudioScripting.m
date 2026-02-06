@@ -46,8 +46,10 @@ n_test_trls = 100; % number of test trials in each block
 n_tot_test_trls = 4 * n_test_trls;
 n_tot_trls = n_tot_prac_trls + n_tot_test_trls; % total number of trials
 nt_per_d = 4; % number of trials per distractor
+trl_iti_range = [1.5 1.9]; % range of inter-trial intervals
 trl_sched = []; % sequence of targets (1) or distractors (2)
-% assigned by set_trial_schedule() before each call to run_trials()
+trl_iti = []; % inter-trial intervals for each trial
+% last two assigned by set_trial_schedule() before each call to run_trials()
 
 % trial timing
 stim_dur = 1.0; % stimulus duration
@@ -249,6 +251,8 @@ wrap_up;
 	end
 
 	function set_trial_schedule( a_ntrls )
+		% trl_sched and trl_iti are both traversable by index "i" in
+		% run_trials() below, not by iTrl.
 		if isPractice
 			trl_sched = zeros( a_ntrls, 1 );
 		else
@@ -258,6 +262,8 @@ wrap_up;
 			trl_sched = trl_sched( :, randperm( size(trl_sched,2) ) );
 			trl_sched = trl_sched(:);
 		end
+		trl_iti = linspace( trl_iti_range(1), trl_iti_range(2), a_ntrls )';
+		trl_iti = trl_iti( randperm( a_ntrls ) );
 	end
 
 	function present_image( aImg )
@@ -270,6 +276,14 @@ wrap_up;
 		Screen('FillRect', window, white);
 		Screen('Flip', window);
 	end
+
+	function draw_fixation()
+		Screen('FillRect', window, white);
+        Screen('DrawLines', window, allCoords,...
+            lineWidthPix, colours.black, [xCenter yCenter] );
+		Screen('Flip', window );
+	end
+
 
 	function run_trials( aTarg,aTargPrompt,aDist,aDistPrompt )
 
@@ -298,6 +312,8 @@ wrap_up;
 			isStimOn = true;
 			for sFr = 1:round(trl_dur * tslr) % sampling frame
 				if sFr == 1
+					draw_fixation;
+					WaitSecs( trl_iti(i) );
 					startResp = GetSecs; % start timer for reaction time measurement
 					tResponse = 0;
 					present_image( stms{ trl_sched( i ) } );
